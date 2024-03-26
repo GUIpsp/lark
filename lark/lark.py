@@ -4,6 +4,7 @@ import sys, os, pickle
 import tempfile
 import types
 import re
+from types import ModuleType
 from typing import (
     TypeVar, Type, List, Dict, Iterator, Callable, Union, Optional, Sequence,
     Tuple, Iterable, IO, Any, TYPE_CHECKING, Collection
@@ -104,6 +105,7 @@ class LarkOptions(Serialize):
             - When given a string, caches to the path pointed by the string
     regex
             When True, uses the ``regex`` module instead of the stdlib ``re``.
+            When a module is passed, that module is used instead of stdlib ``re``.
     g_regex_flags
             Flags that are applied to all terminals (both regex and strings)
     keep_all_tokens
@@ -274,10 +276,15 @@ class Lark(Serialize):
         # Set regex or re module
         use_regex = self.options.regex
         if use_regex:
-            if _has_regex:
-                re_module = regex
+            if use_regex is True:
+                if _has_regex:
+                    re_module = regex
+                else:
+                    raise ImportError('`regex` module must be installed if calling `Lark(regex=True)`.')
+            elif isinstance(use_regex, ModuleType):
+                re_module = use_regex
             else:
-                raise ImportError('`regex` module must be installed if calling `Lark(regex=True)`.')
+                raise ImportError(f'unsupported argument to lark\'s regex param:`Lark(regex={use_regex})`.')
         else:
             re_module = re
 
